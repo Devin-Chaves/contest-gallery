@@ -145,6 +145,22 @@
             updateNav();
           });
         }, { passive: true });
+
+        // Switch lazy images to eager so the gallery loads immediately
+        // instead of waiting for the user to scroll it into view.
+        // Also re-run updateNav after each image loads — cards start at
+        // 0×0 while images are pending, so the initial nav state is wrong.
+        scroller.querySelectorAll('img[loading="lazy"]').forEach(function (img) {
+          img.loading = 'eager';
+          if (!img.complete) {
+            img.addEventListener('load', function () {
+              lastAtStart = null;
+              lastAtEnd = null;
+              updateNav();
+            }, { once: true });
+          }
+        });
+
         updateNav();
 
         // Drag-to-scroll

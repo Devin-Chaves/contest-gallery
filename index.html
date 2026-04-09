@@ -13,7 +13,6 @@
       margin-left: calc(50% - 50vw);
       overflow: auto hidden;
       scroll-snap-type: x proximity;
-      scroll-behavior: smooth;
       scroll-padding-left: max(5%, calc(50vw - 37rem));
       user-select: none;
       -webkit-overflow-scrolling: touch;
@@ -132,7 +131,15 @@
           nudge(1);
         });
 
-        scroller.addEventListener('scroll', updateNav, { passive: true });
+        // Throttle scroll → updateNav to one call per animation frame.
+        var navRaf = 0;
+        scroller.addEventListener('scroll', function () {
+          if (navRaf) return;
+          navRaf = requestAnimationFrame(function () {
+            navRaf = 0;
+            updateNav();
+          });
+        }, { passive: true });
         updateNav();
 
         // Drag-to-scroll

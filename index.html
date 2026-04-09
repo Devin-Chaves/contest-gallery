@@ -70,11 +70,6 @@
         var prev = scope.querySelector('.contest-gallery__controls__prev');
         var next = scope.querySelector('.contest-gallery__controls__next');
 
-        function step() {
-          var gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap) || 0;
-          return firstCard.offsetWidth + gap;
-        }
-
         function updateNav() {
           var max = scroller.scrollWidth - scroller.clientWidth;
           var atStart = scroller.scrollLeft <= 4;
@@ -91,8 +86,32 @@
           }
         }
 
+        // Scroll to the next/prev card that isn't fully visible.
+        // Handles mixed-width cards by reading actual positions
+        // instead of assuming a fixed step size.
         function nudge(dir) {
-          scroller.scrollBy({ left: dir * step(), behavior: 'smooth' });
+          var cards = Array.from(track.querySelectorAll('.gallery-card'));
+          var padLeft = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+
+          if (dir === 1) {
+            // Next: find first card whose right edge is clipped or off-screen
+            for (var i = 0; i < cards.length; i++) {
+              var r = cards[i].getBoundingClientRect();
+              if (r.left >= scroller.clientWidth - 1 || r.right > scroller.clientWidth + 1) {
+                scroller.scrollBy({ left: r.left - padLeft, behavior: 'smooth' });
+                return;
+              }
+            }
+          } else {
+            // Prev: find last card whose left edge is off-screen left
+            for (var i = cards.length - 1; i >= 0; i--) {
+              var r = cards[i].getBoundingClientRect();
+              if (r.left < padLeft - 1) {
+                scroller.scrollBy({ left: r.left - padLeft, behavior: 'smooth' });
+                return;
+              }
+            }
+          }
         }
 
         if (prev) prev.addEventListener('click', function (e) {

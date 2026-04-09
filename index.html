@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contest Gallery</title>
+  <style>
+
+    /* Scroll container — full-viewport breakout with leading edge
+       aligned to .padding-global > .container-large column. */
+    .contest-gallery__carousel {
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      overflow: auto hidden;
+      scroll-snap-type: x proximity;
+      scroll-behavior: smooth;
+      scroll-padding-left: max(5%, calc(50vw - 37rem));
+      cursor: grab;
+      user-select: none;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior-x: contain;
+      padding-bottom: 0.5rem;
+    }
+
+    .contest-gallery__track {
+      padding-left: max(5%, calc(50vw - 37rem));
+      padding-right: 0;
+    }
+    .contest-gallery__carousel:active { cursor: grabbing; }
+    .contest-gallery__carousel.is-dragging { scroll-snap-type: none; }
+    .contest-gallery__carousel::-webkit-scrollbar { display: none; }
+    .contest-gallery__carousel { scrollbar-width: none; }
+
+    .gallery-card {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+    }
+
+    /* Disabled state for prev/next at carousel edges */
+    .contest-gallery__controls__prev.is-disabled,
+    .contest-gallery__controls__next.is-disabled {
+      opacity: 0.35;
+      pointer-events: none;
+      cursor: default;
+    }
+
+    /* Active state — fill when there's content in that direction */
+    .contest-gallery__controls__prev,
+    .contest-gallery__controls__next {
+      transition: background-color 0.2s ease, opacity 0.2s ease;
+    }
+    .contest-gallery__controls__prev.is-active,
+    .contest-gallery__controls__next.is-active {
+      background-color: rgba(49, 48, 47, 0.05);
+    }
+
+  </style>
+  <script>
+    (function () {
+      function init(scroller) {
+        if (!scroller || scroller.dataset.contestGalleryInit === '1') return;
+        scroller.dataset.contestGalleryInit = '1';
+
+        var track = scroller.querySelector('.contest-gallery__track');
+        var firstCard = scroller.querySelector('.gallery-card');
+        if (!track || !firstCard) return;
+
+        var scope = scroller.closest('.contest-gallery, section, main, body') || document;
+        var prev = scope.querySelector('.contest-gallery__controls__prev');
+        var next = scope.querySelector('.contest-gallery__controls__next');
+
+        function step() {
+          var gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap) || 0;
+          return firstCard.offsetWidth + gap;
+        }
+
+        function updateNav() {
+          var max = scroller.scrollWidth - scroller.clientWidth;
+          var atStart = scroller.scrollLeft <= 4;
+          var atEnd = scroller.scrollLeft >= max - 4;
+          if (prev) {
+            prev.classList.toggle('is-disabled', atStart);
+            prev.classList.toggle('is-active', !atStart);
+            prev.setAttribute('aria-disabled', atStart ? 'true' : 'false');
+          }
+          if (next) {
+            next.classList.toggle('is-disabled', atEnd);
+            next.classList.toggle('is-active', !atEnd);
+            next.setAttribute('aria-disabled', atEnd ? 'true' : 'false');
+          }
+        }
+
+        function nudge(dir) {
+          scroller.scrollBy({ left: dir * step(), behavior: 'smooth' });
+        }
+
+        if (prev) prev.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (prev.classList.contains('is-disabled')) return;
+          nudge(-1);
+        });
+        if (next) next.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (next.classList.contains('is-disabled')) return;
+          nudge(1);
+        });
+
+        scroller.addEventListener('scroll', updateNav, { passive: true });
+        window.addEventListener('resize', updateNav);
+        updateNav();
+
+        // Drag-to-scroll
+        var isDown = false;
+        var startX = 0;
+        var startLeft = 0;
+        var moved = false;
+
+        scroller.addEventListener('pointerdown', function (e) {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          isDown = true;
+          moved = false;
+          startX = e.clientX;
+          startLeft = scroller.scrollLeft;
+          scroller.classList.add('is-dragging');
+          try { scroller.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+
+        scroller.addEventListener('pointermove', function (e) {
+          if (!isDown) return;
+          var dx = e.clientX - startX;
+          if (Math.abs(dx) > 3) moved = true;
+          if (moved) {
+            e.preventDefault();
+            scroller.scrollLeft = startLeft - dx;
+          }
+        });
+
+        function endDrag() {
+          if (!isDown) return;
+          isDown = false;
+          scroller.classList.remove('is-dragging');
+        }
+        scroller.addEventListener('pointerup', endDrag);
+        scroller.addEventListener('pointercancel', endDrag);
+
+        scroller.addEventListener('click', function (e) {
+          if (moved) { e.preventDefault(); e.stopPropagation(); }
+        }, true);
+      }
+
+      function initAll() {
+        document.querySelectorAll('.contest-gallery__carousel').forEach(init);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAll);
+      } else {
+        initAll();
+      }
+    })();
+  </script>
+</head>
+<body></body>
+</html>

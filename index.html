@@ -11,12 +11,12 @@
     .contest-gallery__carousel {
       width: 100vw;
       margin-left: calc(50% - 50vw);
-      overflow: auto hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
       scroll-snap-type: x proximity;
       scroll-padding-left: max(5%, calc(50vw - 37rem));
       user-select: none;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
+      touch-action: pan-x pan-y;
       overscroll-behavior-x: contain;
       padding-bottom: 0.5rem;
     }
@@ -25,12 +25,9 @@
       padding-left: max(5%, calc(50vw - 37rem));
       padding-right: 0;
     }
-    @media (hover: none) {
+    @media (hover: hover) {
       .contest-gallery__carousel { cursor: grab; }
       .contest-gallery__carousel:active { cursor: grabbing; }
-    }
-    @media (hover: hover) {
-      .contest-gallery__carousel { cursor: default; }
     }
     .contest-gallery__carousel.is-dragging { scroll-snap-type: none; }
     .contest-gallery__carousel::-webkit-scrollbar { display: none; }
@@ -170,7 +167,8 @@
         var moved = false;
 
         scroller.addEventListener('pointerdown', function (e) {
-          if (e.pointerType === 'mouse') return;
+          // Mouse-only drag-to-scroll — touch uses native overflow scroll.
+          if (e.pointerType !== 'mouse') return;
           isDown = true;
           moved = false;
           startX = e.clientX;
